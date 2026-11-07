@@ -79,6 +79,21 @@ Measurement noise accounts for only ~15 % of the variance in recovery. Baseline 
 
 <p align="center"><img src="docs/figures/06_simulation.png" width="95%"></p>
 
+## End-to-end check: 10 held-out patients through the app
+
+The validation script takes 10 real GaitRec TEST patients (3 hip, 3 knee, 2 ankle, 2 calcaneus; spread across baseline severity; never seen in training). It exports each admission test as a raw lab file (Newtons, mm, 3 noisy trials, 300 samples) and runs it through the app's own upload code. It then compares the forecast with the follow-up test that was actually measured.
+
+<p align="center"><img src="docs/figures/09_validation_10_patients.png" width="95%"></p>
+
+| | GaitTwin | "No change" guess |
+|---|---|---|
+| Gait-score error (mean, GNI points) | **5.2** | 6.0 |
+| Waveform error (RMSE, × BW) | **0.023** | 0.030 |
+| Actual score inside the 90 % range | **9 / 10** | — |
+
+- **The upload step is accurate.** Converting from the raw Newton/mm files changed the gait score by at most 0.14 points.
+- **Weakness:** the size of each patient's change is predicted poorly. Correlation is 0.30, and the forecast flagged only 1 of the 5 real improvers, though that one was correct. Patient P04 improved by +15 points, far beyond the forecast. This matches the main finding above: most recovery variation is not visible in an admission force-plate test.
+
 ## Clinical app: upload your own patient
 
 The Streamlit clinical app ([live here](https://gaittwin-gait-recovery.streamlit.app/); code in the private full repository) is a two-mode tool designed around what a rehabilitation doctor needs at the bedside:
