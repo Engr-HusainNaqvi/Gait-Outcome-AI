@@ -63,7 +63,7 @@ a{color:var(--accent)}
   <div class="stats">
     <div class="stat"><b>1,854</b><span>patients with before/after-treatment gait (GaitRec)</span></div>
     <div class="stat"><b>−19 %</b><span>waveform error vs "no change", held-out patients</span></div>
-    <div class="stat"><b>0.63</b><span>AUROC for clinically meaningful improvement</span></div>
+    <div class="stat"><b>0.67</b><span>AUROC for clinically meaningful improvement</span></div>
     <div class="stat"><b>89.7 %</b><span>coverage of the 90 % prediction bands</span></div>
     <div class="stat"><b>0.96</b><span>split-half ICC of the GRF Normalcy Index</span></div>
   </div>
@@ -96,13 +96,13 @@ a{color:var(--accent)}
   <div class="tbl"><table>
     <tr><th>Model (last follow-up, n = 592)</th><th>Waveform RMSE</th><th>GNI MAE</th><th>r (ΔGNI)</th><th>AUROC</th></tr>
     <tr><td>Persistence (no change)</td><td>0.0315</td><td>5.36</td><td>—</td><td>0.500</td></tr>
-    <tr><td>Mean change (class × time)</td><td>0.0281</td><td>5.06</td><td>0.223</td><td>0.616</td></tr>
-    <tr><td>PCA + Ridge</td><td>0.0255</td><td>5.05</td><td>0.241</td><td>0.619</td></tr>
-    <tr><td>PCA + Gradient Boosting</td><td>0.0259</td><td>5.12</td><td>0.239</td><td>0.613</td></tr>
-    <tr><td>GaitTwin CNN ensemble</td><td>0.0266</td><td>5.15</td><td>0.257</td><td>0.612</td></tr>
-    <tr class="best"><td>GaitTwin stack</td><td>0.0254</td><td>5.04</td><td>0.269</td><td>0.631</td></tr>
+    <tr><td>Mean change (class × time)</td><td>0.0281</td><td>4.98</td><td>0.348</td><td>0.661</td></tr>
+    <tr><td>PCA + Ridge</td><td>0.0255</td><td>4.96</td><td>0.347</td><td>0.661</td></tr>
+    <tr><td>PCA + Gradient Boosting</td><td>0.0260</td><td>5.00</td><td>0.356</td><td>0.668</td></tr>
+    <tr><td>GaitTwin CNN ensemble</td><td>0.0266</td><td>5.05</td><td>0.339</td><td>0.647</td></tr>
+    <tr class="best"><td>GaitTwin stack</td><td>0.0254</td><td>4.94</td><td>0.366</td><td>0.669</td></tr>
   </table></div>
-  <p>The stack is significantly better than persistence, mean change, gradient boosting and the CNN alone (paired bootstrap, 95 % CI excludes 0). Its margin over Ridge alone is not significant.</p>
+  <p>The stack is significantly better than persistence, mean change, gradient boosting and the CNN alone (paired bootstrap, 95 % CI excludes 0). Its margin over Ridge alone is not significant. A severity-aware calibration keeps forecasts unbiased from the most impaired patients (baseline GNI &lt; 70: true +3.2, predicted +4.5) to near-normal ones (≥ 90: true −0.2, predicted 0.0).</p>
   <div class="grid2">
     <figure><img src="figures/04_delta_gni.png" alt="Predicted vs actual change in GNI"><figcaption>Predicted vs actual recovery, and error by diagnosis group.</figcaption></figure>
     <figure><img src="figures/05_calibration.png" alt="Uncertainty calibration"><figcaption>Raw ensemble σ under-covers. Conformal scaling restores 90 %.</figcaption></figure>
@@ -112,7 +112,7 @@ a{color:var(--accent)}
 <section>
   <h2>What the model teaches us</h2>
   <figure><img src="figures/08_variance_budget.png" alt="Variance budget of recovery"><figcaption>Where the variance in recovery comes from.</figcaption></figure>
-  <div class="note">GNI is reliable (ICC 0.96; MDC95 5.3 points), so measurement noise explains only ~15 % of the variance in recovery. Baseline gait plus demographics explain ~6 %. <strong>About 78 % is real patient-to-patient variation that admission force plates cannot see</strong>, such as therapy dose, pain, weight-bearing orders and fixation type. That points directly to multimodal recovery models as the next research step.</div>
+  <div class="note">GNI is reliable (ICC 0.96; MDC95 5.3 points), so measurement noise explains only ~15 % of the variance in recovery. Baseline gait plus demographics explain ~13 %. <strong>About 72 % is real patient-to-patient variation that admission force plates cannot see</strong>, such as therapy dose, pain, weight-bearing orders and fixation type. That points directly to multimodal recovery models as the next research step.</div>
   <figure><img src="figures/07_occlusion.png" alt="Occlusion sensitivity map"><figcaption>Occlusion sensitivity: the affected limb's medio-lateral centre of pressure at initial contact and push-off drives the forecast most. This is a testable hypothesis about foot roll-over as an early recovery marker.</figcaption></figure>
 </section>
 
@@ -120,6 +120,18 @@ a{color:var(--accent)}
   <h2>Simulation</h2>
   <figure><img src="figures/06_simulation.png" alt="Simulated recovery trajectory, loading curves and symmetry"><figcaption>Recovery trajectory with a 90 % band, simulated loading curves over time, and limb symmetry. The footwear effect is <span class="warn">associational, not causal</span>.</figcaption></figure>
   <p>An interactive Streamlit "digital twin" (slider for rehabilitation days, footwear what-if, comparison with the real follow-up) is part of the full project. A live demo is available on request.</p>
+</section>
+
+<section>
+  <h2>Clinical app: upload your own patient</h2>
+  <p>A Streamlit tool built around the questions a rehabilitation doctor asks: <em>how impaired is this patient, where will they be in three weeks, and are they on track?</em></p>
+  <ol>
+    <li><strong>Enter patient details.</strong> Age, sex, height, mass, injury group, affected side and footwear.</li>
+    <li><strong>Upload the force-plate export</strong> (CSV or Excel). Column names, trials, sampling length, units (N → × body weight, mm → m) and sign conventions are detected and converted automatically. Each step is reported, and implausible files are rejected.</li>
+    <li><strong>Pick a follow-up day and footwear.</strong> See the gait score now and forecast with a 90 % range, the chance of a meaningful improvement (≥ 5 points) and when near-normal gait is expected.</li>
+    <li><strong>Optional follow-up test.</strong> An on-track check returns <em>below expected / lower part of range / on track / better than expected</em>.</li>
+  </ol>
+  <p>Safety flags cover an out-of-distribution gait pattern, a low chance of improvement and persisting asymmetry. One click gives a <strong>one-page PDF report</strong> for the patient file. Example files and a template are included. Research prototype, <span class="warn">not a medical device</span>.</p>
 </section>
 
 <section>

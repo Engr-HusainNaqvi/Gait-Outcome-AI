@@ -14,6 +14,8 @@ A patient arrives for inpatient rehabilitation after a hip, knee, ankle or calca
 
 and it lets you run *what-if* simulations over rehabilitation time and footwear.
 
+**For clinicians:** upload your own patient's force-plate export (CSV/Excel, any units) and get a forecast, an on-track check against a follow-up test and a one-page PDF report. See [Clinical app](#clinical-app-upload-your-own-patient).
+
 <p align="center"><img src="docs/figures/02_example_forecasts.png" width="92%"></p>
 
 ## Data
@@ -27,7 +29,7 @@ and it lets you run *what-if* simulations over rehabilitation time and footwear.
 | Test set (GaitRec's own patient-level TEST flag) | 551 patients, 592 admissions, median 22 days to last visit |
 | Training augmentation | every earlier → later visit within an admission (8,287 pairs) |
 
-The data are **not** redistributed here.
+The data are **not** redistributed here; `scripts/download_data.py` fetches them from figshare.
 
 ## Method (summary; full design in [`docs/methodology.md`](docs/methodology.md))
 
@@ -40,7 +42,7 @@ The data are **not** redistributed here.
    - **GaitTwin stack:** a convex blend of the CNN ensemble and Ridge, with the weight (0.35) chosen on validation patients
 4. **Calibration.**
    - Split-conformal scaling of the ensemble σ for waveform bands.
-   - Validation-fitted linear recalibration of predicted ΔGNI. Scoring an averaged waveform makes it look more "normal" than real gait (a Jensen gap). Without the fix, forecasts over-predict improvement by 2–3 GNI points.
+   - **Severity-aware recalibration of predicted ΔGNI**, fitted on validation patients: ΔGNI = a + b·Δpred + c·(GNI_baseline − 85). Scoring an averaged waveform makes it look more "normal" than real gait (a Jensen gap), so uncalibrated forecasts over-predict improvement by 2–3 points. A doctor's-eye check also showed that a single offset under-predicted recovery in the most impaired patients and over-predicted it in near-normal ones. The baseline-severity term fixes most of that.
 5. **Reliability.** A split-half (odd vs even trials) analysis gives the measurement-noise ceiling.
 
 ## Results: held-out patients, last follow-up visit (n = 592)
@@ -48,24 +50,26 @@ The data are **not** redistributed here.
 | Model | Waveform RMSE ↓ | GNI MAE ↓ | r (ΔGNI) ↑ | Responder AUROC ↑ |
 |---|---|---|---|---|
 | Persistence (no change) | 0.0315 | 5.36 | — | 0.500 |
-| Mean change (class × time) | 0.0281 | 5.06 | 0.223 | 0.616 |
-| PCA + Ridge | 0.0255 | 5.05 | 0.241 | 0.619 |
-| PCA + Gradient Boosting | 0.0259 | 5.12 | 0.239 | 0.613 |
-| GaitTwin CNN (ensemble) | 0.0266 | 5.15 | 0.257 | 0.612 |
-| **GaitTwin stack** | **0.0254** | **5.04** | **0.269** | **0.631** |
+| Mean change (class × time) | 0.0281 | 4.98 | 0.348 | 0.661 |
+| PCA + Ridge | 0.0255 | 4.96 | 0.347 | 0.661 |
+| PCA + Gradient Boosting | 0.0260 | 5.00 | 0.356 | 0.668 |
+| GaitTwin CNN (ensemble) | 0.0266 | 5.05 | 0.339 | 0.647 |
+| **GaitTwin stack** | **0.0254** | **4.94** | **0.366** | **0.669** |
 
 - **Waveform error vs persistence:** the stack cuts it by 19 % (35 % in MSE). It is significantly better than persistence, mean change, gradient boosting and the CNN alone (subject-level paired bootstrap; 95 % CIs exclude 0). Its edge over PCA + Ridge alone is **not** significant.
 - **Uncertainty is calibrated:**
   - 90 % waveform bands cover **89.7 %** of test points.
-  - 90 % GNI intervals (± 9.9 points) cover **87.5 %** of last-visit outcomes.
-- **By diagnosis (r for ΔGNI):** calcaneus 0.37, ankle 0.30, knee 0.28, hip 0.17.
+  - 90 % GNI intervals (± 9.6 points) cover **86.7 %** of last-visit outcomes.
+- **By diagnosis (r for ΔGNI):** calcaneus 0.43, ankle 0.40, knee 0.38, hip 0.26.
+- **Calibrated across severity** (stack, mean ΔGNI, true → predicted): baseline GNI < 70: 3.2 → 4.5 (n = 29); 70–80: 4.8 → 3.6 (n = 81); 80–90: 2.3 → 2.3 (n = 224); ≥ 90: −0.2 → 0.0 (n = 258). Overall bias −0.004 points.
+- **Responder probability** (P[ΔGNI ≥ 5]): Brier 0.190 vs 0.203 for the base rate. It is informative but modest, so the app shows it as Low / Moderate / Higher rather than as a precise percentage.
 - **Measurement is reliable:** GNI split-half ICC = **0.96**, SEM = 1.9 points, MDC95 = 5.3 points. That justifies the responder threshold (ΔGNI ≥ 5).
 
 ### What this means
 
 <p align="center"><img src="docs/figures/08_variance_budget.png" width="75%"></p>
 
-Measurement noise accounts for only ~15 % of the variance in recovery. Baseline gait plus demographics explain ~6 %. **The remaining ~78 % is real patient-to-patient variation that force plates at admission cannot see.** Likely sources are therapy dose, pain, weight-bearing orders, fracture fixation and psychosocial factors. This is the central research finding. It motivates multimodal models (clinical notes, imaging, wearables, treatment logs) as the next step.
+Measurement noise accounts for only ~15 % of the variance in recovery. Baseline gait plus demographics explain ~13 %. **The remaining ~72 % is real patient-to-patient variation that force plates at admission cannot see.** Likely sources are therapy dose, pain, weight-bearing orders, fracture fixation and psychosocial factors. This is the central research finding. It motivates multimodal models (clinical notes, imaging, wearables, treatment logs) as the next step.
 
 <p align="center"><img src="docs/figures/07_occlusion.png" width="70%"></p>
 
@@ -75,17 +79,28 @@ Measurement noise accounts for only ~15 % of the variance in recovery. Baseline 
 
 <p align="center"><img src="docs/figures/06_simulation.png" width="95%"></p>
 
-The Streamlit app (in the private full repository) turns the model into an interactive "gait digital twin":
-- pick a held-out patient,
-- move the rehabilitation-day slider,
-- switch footwear,
-- compare the simulation with what actually happened.
+## Clinical app: upload your own patient
 
-The footwear switch shows an **association** learned from observational data, not a causal treatment effect.
+The Streamlit clinical app (in the private full repository; live demo on request) is a two-mode tool designed around what a rehabilitation doctor needs at the bedside:
+
+| Step | What the clinician does | What the app does |
+|---|---|---|
+| 1. Patient | Enters age, sex, height, mass, injury group, affected side, test footwear, insole, re-admission | Builds the model's covariates (BMI from height and mass) |
+| 2. Upload | Drops the force-plate export (CSV / TXT / Excel) | Recognises common column names (`F_V`/`Fz`, `COP_AP`/`COPy`, `_left`/`_R`, …). Averages trials, resamples to 101 points, converts **Newtons → × body weight** and **mm/cm → m**, and fixes sign conventions. It reports every conversion and rejects implausible data (vertical peak outside 0.5–2 × BW). |
+| 3. Forecast | Picks the follow-up day (1–60) and planned footwear | Shows the gait score now and at that day with a 90 % range, the chance of a meaningful improvement (≥ 5 points, MDC95 = 5.3) and the day near-normal gait is expected |
+| 4. Follow-up (optional) | Uploads a second test and the days between tests | **On-track check:** BELOW expected / lower part of range / ON TRACK / BETTER than expected |
+
+The app also gives:
+- **Safety flags.** An out-of-distribution warning when the gait pattern is unlike the training data (Mahalanobis distance, 99th percentile). It also flags a low chance of improvement, persisting loading asymmetry (LSI < 90 %) and a patient already in the healthy range.
+- **Views.** Gait curves against a healthy ± 1 SD band, the recovery trajectory with a footwear what-if, and a gait-parameter table (loading, push-off, braking, propulsion and symmetry vs healthy).
+- **A one-page PDF report** (summary, tables, flags, data-processing notes, figure) and a CSV of the forecast curves.
+- **A template and three example files**: body-weight CSV, Newtons/mm CSV with 3 trials, and Excel plus a follow-up test, taken from held-out GaitRec patients.
+
+Footwear what-ifs are **associations** learned from observational data, not causal treatment effects. This is a research prototype and **not a medical device**.
 
 ## Source code
 
-This public repository is a **showcase**: write-up, figures, interactive pages, research design and all reported metrics ([`results/metrics.json`](results/metrics.json)). The full pipeline lives in a private repository: data download, training, the GaitTwin model, trained weights, reliability analysis, tests, Colab notebook and the Streamlit simulator. **Source access and a live demo are available on request** via GitHub ([Engr-HusainNaqvi](https://github.com/Engr-HusainNaqvi)).
+This public repository is a **showcase**: write-up, figures, interactive pages, research design and all reported metrics ([`results/metrics.json`](results/metrics.json)). The full pipeline lives in a private repository: data download, training, the GaitTwin model, trained weights, reliability analysis, tests, Colab notebook and the Streamlit clinical app (upload your own patient, PDF report). **Source access and a live demo are available on request** via GitHub ([Engr-HusainNaqvi](https://github.com/Engr-HusainNaqvi)).
 
 ## Limitations
 
