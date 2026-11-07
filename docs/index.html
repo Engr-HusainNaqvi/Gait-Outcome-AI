@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GaitTwin — Gait Recovery Simulation</title>
+<meta name="description" content="AI-driven predictive simulation of gait and post-treatment functional outcomes from one admission gait test. Husain Naqvi, 2026.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fbfbfd;--fg:#14161a;--muted:#5b6170;--card:#ffffff;--line:#e6e8ee;--accent:#2563eb;--accent-soft:#e8efff;--warn:#b45309}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1116;--fg:#e8eaf0;--muted:#9aa1b2;--card:#161a22;--line:#262c38;--accent:#6ea0ff;--accent-soft:#1b2640;--warn:#f59e0b}}
+:root[data-theme="dark"]{--bg:#0e1116;--fg:#e8eaf0;--muted:#9aa1b2;--card:#161a22;--line:#262c38;--accent:#6ea0ff;--accent-soft:#1b2640;--warn:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 Inter,system-ui,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:0 16px}
+header{padding:56px 0 28px;border-bottom:1px solid var(--line)}
+.kicker{color:var(--accent);font-weight:600;letter-spacing:.04em;text-transform:uppercase;font-size:13px}
+h1{font-size:clamp(28px,5vw,44px);line-height:1.15;margin:.3em 0;font-weight:800}
+.lead{font-size:clamp(17px,2.4vw,20px);color:var(--muted);max-width:780px}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.btn{display:inline-block;padding:9px 16px;border-radius:8px;border:1px solid var(--line);color:var(--fg);text-decoration:none;font-weight:600;font-size:14px;background:var(--card)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+section{padding:36px 0;border-bottom:1px solid var(--line)}
+h2{font-size:24px;margin:0 0 12px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+.stat b{display:block;font-size:26px;color:var(--accent)}
+.stat span{color:var(--muted);font-size:13px}
+figure{margin:18px 0;background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px}
+figure img{width:100%;height:auto;display:block}
+figcaption{color:#555;font-size:13px;padding:6px 4px 0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+tr.best td{font-weight:700;color:var(--accent)}
+.note{background:var(--accent-soft);border-radius:10px;padding:14px 16px;margin:16px 0}
+.warn{color:var(--warn);font-weight:600}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+code{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1px 5px;font-size:14px}
+pre{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;font-size:13px}
+footer{padding:28px 0 48px;color:var(--muted);font-size:14px}
+a{color:var(--accent)}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="kicker">Research project · Clinical biomechanics × machine learning</div>
+  <h1>GaitTwin: predictive simulation of gait after rehabilitation</h1>
+  <p class="lead">From <strong>one force-plate gait test at admission</strong>, GaitTwin simulates a patient's full ground-reaction-force pattern for any day of rehabilitation. It adds calibrated uncertainty and a clinically scaled outcome score.</p>
+  <div class="btns">
+    <a class="btn primary" href="interactive/forecast_explorer.html">Forecast explorer</a>
+    <a class="btn" href="interactive/model_comparison.html">Model comparison</a>
+    <a class="btn" href="https://github.com/Engr-HusainNaqvi/Gait-Outcome-AI/blob/main/docs/methodology.md">Research design</a>
+    <a class="btn" href="https://github.com/Engr-HusainNaqvi/Gait-Outcome-AI">GitHub</a>
+  </div>
+</div></header>
+
+<main class="wrap">
+<section>
+  <h2>At a glance</h2>
+  <div class="stats">
+    <div class="stat"><b>1,854</b><span>patients with before/after-treatment gait (GaitRec)</span></div>
+    <div class="stat"><b>−19 %</b><span>waveform error vs "no change", held-out patients</span></div>
+    <div class="stat"><b>0.63</b><span>AUROC for clinically meaningful improvement</span></div>
+    <div class="stat"><b>89.7 %</b><span>coverage of the 90 % prediction bands</span></div>
+    <div class="stat"><b>0.96</b><span>split-half ICC of the GRF Normalcy Index</span></div>
+  </div>
+  <figure><img src="figures/02_example_forecasts.png" alt="Admission, actual follow-up and forecast GRF curves for three held-out patients"><figcaption>Three held-out patients: admission (grey), actual follow-up (black), GaitTwin forecast (blue) with a 90 % conformal band.</figcaption></figure>
+</section>
+
+<section>
+  <h2>The problem</h2>
+  <p>Recovery after lower-limb trauma varies widely between patients. Clinicians set discharge goals and spot non-responders by experience, because no tool says <em>how a patient will walk</em> after N days of treatment. Ground-reaction forces capture loading tolerance, limb symmetry and push-off. They are standard in gait labs, but rich (1,010 numbers per session) and hard to read.</p>
+  <figure><img src="figures/01_dataset.png" alt="Follow-up horizon, diagnosis groups and GNI distributions"><figcaption>GaitRec longitudinal cohort. Right: the GRF Normalcy Index moves toward healthy (100) during rehabilitation.</figcaption></figure>
+</section>
+
+<section>
+  <h2>Method</h2>
+  <div class="grid2">
+    <div>
+      <p><strong>GaitTwin CNN.</strong> A 1-D convolutional encoder reads the admission gait. FiLM layers condition it on clinical context (age, BMI, sex, diagnosis group, bilateral involvement, footwear, insole) and on elapsed days. A heteroscedastic β-NLL head predicts the change waveform with a variance per point. Five ensemble members add model uncertainty.</p>
+      <p><strong>Stack.</strong> A validation-chosen blend with PCA + Ridge (weight 0.35 on the CNN).</p>
+    </div>
+    <div>
+      <p><strong>GRF Normalcy Index.</strong> A Gait-Deviation-Index-style score built on a PCA manifold: 100 = healthy, −10 = 1 SD from normal.</p>
+      <p><strong>Calibration.</strong> Split-conformal bands. A validation-fitted ΔGNI recalibration removes a 2–3-point optimism bias, which comes from scoring an averaged waveform.</p>
+      <p><strong>Protocol.</strong> Patient-level train/test split (GaitRec flags), evaluated on the last follow-up, with subject-level bootstrap CIs.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Results</h2>
+  <div class="tbl"><table>
+    <tr><th>Model (last follow-up, n = 592)</th><th>Waveform RMSE</th><th>GNI MAE</th><th>r (ΔGNI)</th><th>AUROC</th></tr>
+    <tr><td>Persistence (no change)</td><td>0.0315</td><td>5.36</td><td>—</td><td>0.500</td></tr>
+    <tr><td>Mean change (class × time)</td><td>0.0281</td><td>5.06</td><td>0.223</td><td>0.616</td></tr>
+    <tr><td>PCA + Ridge</td><td>0.0255</td><td>5.05</td><td>0.241</td><td>0.619</td></tr>
+    <tr><td>PCA + Gradient Boosting</td><td>0.0259</td><td>5.12</td><td>0.239</td><td>0.613</td></tr>
+    <tr><td>GaitTwin CNN ensemble</td><td>0.0266</td><td>5.15</td><td>0.257</td><td>0.612</td></tr>
+    <tr class="best"><td>GaitTwin stack</td><td>0.0254</td><td>5.04</td><td>0.269</td><td>0.631</td></tr>
+  </table></div>
+  <p>The stack is significantly better than persistence, mean change, gradient boosting and the CNN alone (paired bootstrap, 95 % CI excludes 0). Its margin over Ridge alone is not significant.</p>
+  <div class="grid2">
+    <figure><img src="figures/04_delta_gni.png" alt="Predicted vs actual change in GNI"><figcaption>Predicted vs actual recovery, and error by diagnosis group.</figcaption></figure>
+    <figure><img src="figures/05_calibration.png" alt="Uncertainty calibration"><figcaption>Raw ensemble σ under-covers. Conformal scaling restores 90 %.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>What the model teaches us</h2>
+  <figure><img src="figures/08_variance_budget.png" alt="Variance budget of recovery"><figcaption>Where the variance in recovery comes from.</figcaption></figure>
+  <div class="note">GNI is reliable (ICC 0.96; MDC95 5.3 points), so measurement noise explains only ~15 % of the variance in recovery. Baseline gait plus demographics explain ~6 %. <strong>About 78 % is real patient-to-patient variation that admission force plates cannot see</strong>, such as therapy dose, pain, weight-bearing orders and fixation type. That points directly to multimodal recovery models as the next research step.</div>
+  <figure><img src="figures/07_occlusion.png" alt="Occlusion sensitivity map"><figcaption>Occlusion sensitivity: the affected limb's medio-lateral centre of pressure at initial contact and push-off drives the forecast most. This is a testable hypothesis about foot roll-over as an early recovery marker.</figcaption></figure>
+</section>
+
+<section>
+  <h2>Simulation</h2>
+  <figure><img src="figures/06_simulation.png" alt="Simulated recovery trajectory, loading curves and symmetry"><figcaption>Recovery trajectory with a 90 % band, simulated loading curves over time, and limb symmetry. The footwear effect is <span class="warn">associational, not causal</span>.</figcaption></figure>
+  <p>An interactive Streamlit "digital twin" (slider for rehabilitation days, footwear what-if, comparison with the real follow-up) is part of the full project. A live demo is available on request.</p>
+</section>
+
+<section>
+  <h2>Data &amp; limitations</h2>
+  <p>Data: <a href="https://doi.org/10.1038/s41597-020-0481-z">GaitRec</a> (Horsak et al., 2020, <em>Scientific Data</em>, CC BY 4.0), one Austrian rehabilitation centre.</p>
+  <p>Limitations: a single centre with observational data; ground-reaction forces only, with no kinematics, EMG or patient-reported outcomes; no external validation yet. <strong>Research and education only, not a medical device.</strong></p>
+</section>
+</main>
+
+<footer><div class="wrap">© 2026 Husain Naqvi. All Rights Reserved. No reuse without written permission. Source access on request via <a href="https://github.com/Engr-HusainNaqvi">GitHub</a>.</div></footer>
+</body>
+</html>

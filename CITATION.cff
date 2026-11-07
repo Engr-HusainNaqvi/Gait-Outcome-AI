@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you refer to this work, please cite it as below."
+title: "GaitTwin: AI-Driven Predictive Simulation of Gait and Post-Treatment Functional Outcomes"
+authors:
+  - family-names: Naqvi
+    given-names: Husain
+version: 1.0.0
+date-released: 2026-11-07
+license: LicenseRef-All-Rights-Reserved
+repository-code: "https://github.com/Engr-HusainNaqvi/Gait-Outcome-AI"
+url: "https://engr-husainnaqvi.github.io/Gait-Outcome-AI/"
+keywords: [gait analysis, ground reaction force, rehabilitation, outcome prediction, deep ensemble, conformal prediction, digital twin]
+references:
+  - type: article
+    authors:
+      - family-names: Horsak
+        given-names: Brian
+    title: "GaitRec, a large-scale ground reaction force dataset of healthy and impaired gait"
+    journal: "Scientific Data"
+    volume: 7
+    start: 143
+    year: 2020
+    doi: 10.1038/s41597-020-0481-z
