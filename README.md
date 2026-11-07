@@ -43,7 +43,8 @@ The data are **not** redistributed here; `scripts/download_data.py` fetches them
 4. **Calibration.**
    - Split-conformal scaling of the ensemble σ for waveform bands.
    - **Severity-aware recalibration of predicted ΔGNI**, fitted on validation patients: ΔGNI = a + b·Δpred + c·(GNI_baseline − 85). Scoring an averaged waveform makes it look more "normal" than real gait (a Jensen gap), so uncalibrated forecasts over-predict improvement by 2–3 points. A doctor's-eye check also showed that a single offset under-predicted recovery in the most impaired patients and over-predicted it in near-normal ones. The baseline-severity term fixes most of that.
-5. **Reliability.** A split-half (odd vs even trials) analysis gives the measurement-noise ceiling.
+5. **Anchored simulation.** The forecast starts exactly at the measured test (day 0) and eases into the model forecast (time constant 2 days). Below day 4, where training data are almost absent, it reads the day-4 forecast. A footwear change acts immediately instead of as recovery. The 90 % band grows from measurement noise (± 3.1) to the conformal width. Held-out accuracy is unchanged.
+6. **Reliability.** A split-half (odd vs even trials) analysis gives the measurement-noise ceiling.
 
 ## Results: held-out patients, last follow-up visit (n = 592)
 
