@@ -1,6 +1,6 @@
 # GaitTwin — AI-Driven Predictive Simulation of Gait & Post-Treatment Functional Outcomes
 
-[![Project page](https://img.shields.io/badge/project-page-2563eb)](https://engr-husainnaqvi.github.io/Gait-Outcome-AI/)
+[![Project page](https://img.shields.io/badge/project-page-2563eb)](https://engr-husainnaqvi.github.io/Gait-Outcome-AI/) [![Live app](https://img.shields.io/badge/live%20app-Streamlit-FF4B4B)](https://gaittwin-gait-recovery.streamlit.app/)
 [![License: All Rights Reserved](https://img.shields.io/badge/license-All%20Rights%20Reserved-red)](LICENSE)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue) ![PyTorch](https://img.shields.io/badge/PyTorch-CPU-orange)
 
@@ -81,7 +81,7 @@ Measurement noise accounts for only ~15 % of the variance in recovery. Baseline 
 
 ## Clinical app: upload your own patient
 
-The Streamlit clinical app (in the private full repository; live demo on request) is a two-mode tool designed around what a rehabilitation doctor needs at the bedside:
+The Streamlit clinical app ([live here](https://gaittwin-gait-recovery.streamlit.app/); code in the private full repository) is a two-mode tool designed around what a rehabilitation doctor needs at the bedside:
 
 | Step | What the clinician does | What the app does |
 |---|---|---|
